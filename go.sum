@@ -1,3 +1,5 @@
+github.com/boombuler/barcode v1.0.1 h1:NDBbPmhS+EqABEs5Kg3n/5ZNjy73Pz7SIV+KCeqyXcs=
+github.com/boombuler/barcode v1.0.1/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
 github.com/makiuchi-d/gozxing v0.0.0-20210622130012-d65dab975fb8 h1:8kUvGDZP/b2BaJ03L/kOmjNvR5yZCKHgJcbSG2LgZmA=
 github.com/makiuchi-d/gozxing v0.0.0-20210622130012-d65dab975fb8/go.mod h1:Tt5nF+kNliU+5MDxqPpsFrtsWNdABQho/xdCZZVKCQc=
 golang.org/x/text v0.3.5 h1:i6eZZ+zk0SOf0xgBpEpPD18qWcJda6q1sxt3S0kzyUQ=

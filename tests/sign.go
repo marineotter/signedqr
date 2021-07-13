@@ -8,7 +8,7 @@ import (
 )
 
 func sign(ctx string) {
-	pngBinaryData := signedqr.Encode("てすとでーたです", fmt.Sprintf("./%s.key", ctx))
+	pngBinaryData := signedqr.Encode("Sample string", fmt.Sprintf("./%s.key", ctx))
 
 	file, err1 := os.Create(fmt.Sprintf("%s.png", ctx))
 	if err1 != nil {
