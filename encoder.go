@@ -32,7 +32,11 @@ func Encode(data string, secretKeyPath string) []byte {
 	message := []byte(data)
 	hashed := sha256.Sum256(message)
 	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hashed[:])
-	signStr := fmt.Sprintf("%x", signature)[:8]
+	signStr := fmt.Sprintf("%x", signature)
+
+	fmt.Printf("enc: hash: %x\n", hashed[:])
+	fmt.Printf("enc: sign: %x\n", signature)
+
 	signedData := signStr + data
 
 	// Generate QR Code
