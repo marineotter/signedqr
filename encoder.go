@@ -12,8 +12,8 @@ import (
 	"image/png"
 	"io/ioutil"
 
-	"github.com/makiuchi-d/gozxing"
-	"github.com/makiuchi-d/gozxing/qrcode"
+	"github.com/boombuler/barcode"
+	"github.com/boombuler/barcode/qr"
 )
 
 func Encode(data string, secretKeyPath string) []byte {
@@ -37,13 +37,14 @@ func Encode(data string, secretKeyPath string) []byte {
 	fmt.Printf("enc: hash: %x\n", hashed[:])
 	fmt.Printf("enc: sign: %x\n", signature)
 
-	signedData := signStr + data
+	signedData := data + signStr
 
 	// Generate QR Code
-	w := qrcode.NewQRCodeWriter()
-	qr, err := w.EncodeWithoutHint(signedData, gozxing.BarcodeFormat_QR_CODE, 512, 512)
+
+	qrData, _ := qr.Encode(signedData, qr.M, qr.Auto)
+	qrCode, _ := barcode.Scale(qrData, 512, 512)
 	buf := new(bytes.Buffer)
-	err = png.Encode(buf, qr)
+	err = png.Encode(buf, qrCode)
 
 	return buf.Bytes()
 }

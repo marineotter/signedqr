@@ -37,11 +37,12 @@ func Decode(imgData []byte, publicKeyPath string) (string, error) {
 	result, _ := qrReader.Decode(bmp, nil)
 
 	// Verify
-	sign := result.String()[:512]
+	resultStr := result.String()
+	sign := result.String()[len(resultStr)-512:]
 	signBytes := make([]byte, hex.DecodedLen(len(sign)))
 	n, err := hex.Decode(signBytes, []byte(sign))
 	signBytes = signBytes[:n]
-	data := result.String()[512:]
+	data := result.String()[:len(resultStr)-512]
 	message := []byte(data)
 	hashed := sha256.Sum256(message)
 	fmt.Printf("dec: hash: %x\n", hashed[:])
