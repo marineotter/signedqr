@@ -6,7 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"image"
@@ -34,15 +34,19 @@ func Decode(imgData []byte, publicKeyPath string) (string, error) {
 	img, _, _ := image.Decode(bytes.NewReader(imgData))
 	bmp, _ := gozxing.NewBinaryBitmapFromImage(img)
 	qrReader := qrcode.NewQRCodeReader()
-	result, _ := qrReader.Decode(bmp, nil)
+	result, err := qrReader.Decode(bmp, nil)
+	if result == nil {
+		return "", err
+	}
 
 	// Verify
 	resultStr := result.String()
-	sign := result.String()[len(resultStr)-512:]
-	signBytes := make([]byte, hex.DecodedLen(len(sign)))
-	n, err := hex.Decode(signBytes, []byte(sign))
+	sign := result.String()[len(resultStr)-88:]
+	signBytes := make([]byte, base64.StdEncoding.DecodedLen(len(sign)))
+	n, err := base64.StdEncoding.Decode(signBytes, []byte(sign))
 	signBytes = signBytes[:n]
-	data := result.String()[:len(resultStr)-512]
+	data := result.String()[:len(resultStr)-88]
+	print(data)
 	message := []byte(data)
 	hashed := sha256.Sum256(message)
 	fmt.Printf("dec: hash: %x\n", hashed[:])

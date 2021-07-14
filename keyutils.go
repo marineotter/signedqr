@@ -13,7 +13,7 @@ import (
 
 func GenerateKeyPair(directory string, prefix string) error {
 	reader := rand.Reader
-	bitSize := 2048
+	bitSize := 512
 
 	key, err := rsa.GenerateKey(reader, bitSize)
 	if err != nil {
@@ -40,7 +40,7 @@ func GenerateKeyPair(directory string, prefix string) error {
 	defer of2.Close()
 	asn1Bytes, err := asn1.Marshal(key.PublicKey)
 	err = pem.Encode(of2, &pem.Block{
-		Type:  "PRIVATE KEY",
+		Type:  "PUBLIC KEY",
 		Bytes: asn1Bytes,
 	})
 
