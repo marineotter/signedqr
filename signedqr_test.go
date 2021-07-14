@@ -1,7 +1,9 @@
 package signedqr
 
 import (
+	"bytes"
 	"fmt"
+	"image/png"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -13,19 +15,24 @@ func TestExampleSuccess(t *testing.T) {
 
 	GenerateKeyPair(".", ctx)
 
-	pngBinaryData := Encode("Sample string", fmt.Sprintf("./%s.key", ctx))
+	qr := Encode("Sample string", fmt.Sprintf("./%s.key", ctx))
 	file, err1 := os.Create(fmt.Sprintf("%s.png", ctx))
 	if err1 != nil {
 		t.Fatal(err1)
 	}
-	_, err2 := file.Write(pngBinaryData)
+	buf := new(bytes.Buffer)
+	_ = png.Encode(buf, qr)
+	_, err2 := file.Write(buf.Bytes())
 	if err2 != nil {
 		t.Fatal(err2)
 	}
 	data, err := ioutil.ReadFile(fmt.Sprintf("%s.png", ctx))
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	res, err := Decode(data, fmt.Sprintf("./%s.pub", ctx))
-	print(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	println(res)
 }

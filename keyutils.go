@@ -1,10 +1,10 @@
 package signedqr
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
-	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -13,36 +13,42 @@ import (
 
 func GenerateKeyPair(directory string, prefix string) error {
 	reader := rand.Reader
-	bitSize := 2048
+	key, err := ecdsa.GenerateKey(elliptic.P224(), reader)
+	if err != nil {
+		error.Error(err)
+	}
 
-	key, err := rsa.GenerateKey(reader, bitSize)
-	if err != nil {
-		error.Error(err)
+	// Store privatekey
+	{
+		var privateFileName = filepath.Join(directory, fmt.Sprintf("%s.key", prefix))
+		of1, err := os.Create(privateFileName)
+		if err != nil {
+			error.Error(err)
+		}
+		defer of1.Close()
+		data, _ := x509.MarshalECPrivateKey(key)
+		err = pem.Encode(of1, &pem.Block{
+			Type:  "PRIVATE KEY",
+			Bytes: data,
+		})
+		of1.Close()
 	}
-	// privatekeyの出力
-	var privateFileName = filepath.Join(directory, fmt.Sprintf("%s.key", prefix))
-	of1, err := os.Create(privateFileName)
-	if err != nil {
-		error.Error(err)
-	}
-	defer of1.Close()
-	err = pem.Encode(of1, &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
 
-	// privatekeyの出力
-	var publicFileName = filepath.Join(directory, fmt.Sprintf("%s.pub", prefix))
-	of2, err := os.Create(publicFileName)
-	if err != nil {
-		error.Error(err)
+	// Store publickey
+	{
+		var publicFileName = filepath.Join(directory, fmt.Sprintf("%s.pub", prefix))
+		of2, err := os.Create(publicFileName)
+		if err != nil {
+			error.Error(err)
+		}
+		defer of2.Close()
+		data, err := x509.MarshalPKIXPublicKey(key.Public())
+		err = pem.Encode(of2, &pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: data,
+		})
+		of2.Close()
 	}
-	defer of2.Close()
-	asn1Bytes, err := asn1.Marshal(key.PublicKey)
-	err = pem.Encode(of2, &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: asn1Bytes,
-	})
 
 	return nil
 }

@@ -1,22 +1,20 @@
 package signedqr
 
 import (
-	"bytes"
-	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"image/png"
 	"io/ioutil"
 
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 )
 
-func Encode(data string, secretKeyPath string) []byte {
+func Encode(data string, secretKeyPath string) *gozxing.BitMatrix {
 	// Generate SignedString
 	keydata, err := ioutil.ReadFile(secretKeyPath)
 	if err != nil {
@@ -24,26 +22,30 @@ func Encode(data string, secretKeyPath string) []byte {
 		return nil
 	}
 	block, _ := pem.Decode(keydata)
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	key, err := x509.ParseECPrivateKey(block.Bytes)
 	if err != nil {
 		print(err.Error())
 		return nil
 	}
 	message := []byte(data)
-	hashed := sha256.Sum256(message)
-	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hashed[:])
-	signStr := fmt.Sprintf("%x", signature)
+	hashed := sha256.Sum224(message)
+	signature, err := ecdsa.SignASN1(rand.Reader, key, hashed[:])
+	signStr := fmt.Sprintf("%x", signature) // for debug
+	signBase64 := base64.StdEncoding.EncodeToString(signature)
+	fmt.Printf("hexstr: %d\n", len(signStr))
+	fmt.Printf("base64: %d\n", len(signBase64))
 
 	fmt.Printf("enc: hash: %x\n", hashed[:])
 	fmt.Printf("enc: sign: %x\n", signature)
-
-	signedData := data + signStr
+	nulChar := string([]byte{0})
+	signedData := data + nulChar + signBase64
 
 	// Generate QR Code
 	w := qrcode.NewQRCodeWriter()
-	qr, err := w.EncodeWithoutHint(signedData, gozxing.BarcodeFormat_QR_CODE, 512, 512)
-	buf := new(bytes.Buffer)
-	err = png.Encode(buf, qr)
+	hints := make(map[gozxing.EncodeHintType]interface{})
+	hints[gozxing.EncodeHintType_MARGIN] = 0
+	hints[gozxing.EncodeHintType_ERROR_CORRECTION] = "H"
+	qr, err := w.Encode(signedData, gozxing.BarcodeFormat_QR_CODE, 512, 512, hints)
 
-	return buf.Bytes()
+	return qr
 }

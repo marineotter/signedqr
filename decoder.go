@@ -2,12 +2,12 @@ package signedqr
 
 import (
 	"bytes"
-	"crypto"
-	"crypto/rsa"
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"image"
 	"io/ioutil"
@@ -24,7 +24,8 @@ func Decode(imgData []byte, publicKeyPath string) (string, error) {
 		return "", err
 	}
 	block, _ := pem.Decode(keydata)
-	key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	genericPublicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	key := genericPublicKey.(*ecdsa.PublicKey)
 	if err != nil {
 		print(err.Error())
 		return "", err
@@ -34,24 +35,31 @@ func Decode(imgData []byte, publicKeyPath string) (string, error) {
 	img, _, _ := image.Decode(bytes.NewReader(imgData))
 	bmp, _ := gozxing.NewBinaryBitmapFromImage(img)
 	qrReader := qrcode.NewQRCodeReader()
-	result, _ := qrReader.Decode(bmp, nil)
+	result, err := qrReader.Decode(bmp, nil)
+	if result == nil {
+		return "", err
+	}
 
 	// Verify
 	resultStr := result.String()
-	sign := result.String()[len(resultStr)-512:]
-	signBytes := make([]byte, hex.DecodedLen(len(sign)))
-	n, err := hex.Decode(signBytes, []byte(sign))
-	signBytes = signBytes[:n]
-	data := result.String()[:len(resultStr)-512]
+	keyStrSize := 0
+	for i := 0; i < len(resultStr); i++ {
+		if int(resultStr[len(resultStr)-1-i]) == 0 {
+			keyStrSize = i
+			break
+		}
+	}
+	sign := result.String()[len(resultStr)-keyStrSize:]
+	signBytes, err := base64.StdEncoding.DecodeString(sign)
+	data := result.String()[:len(resultStr)-keyStrSize-1]
 	message := []byte(data)
-	hashed := sha256.Sum256(message)
+	hashed := sha256.Sum224(message)
 	fmt.Printf("dec: hash: %x\n", hashed[:])
 	fmt.Printf("dec: sign: %x\n", signBytes)
 
-	err2 := rsa.VerifyPKCS1v15(key, crypto.SHA256, hashed[:], signBytes)
-	if err2 != nil {
-		print(err2.Error())
-		return "", err2
+	isOk := ecdsa.VerifyASN1(key, hashed[:], signBytes)
+	if !isOk {
+		return "", errors.New("Verification failed.")
 	}
 	return data, nil
 }
