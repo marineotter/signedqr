@@ -28,8 +28,11 @@ func TestExampleSuccess(t *testing.T) {
 	}
 	data, err := ioutil.ReadFile(fmt.Sprintf("%s.png", ctx))
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	res, err := Decode(data, fmt.Sprintf("./%s.pub", ctx))
+	if err != nil {
+		t.Fatal(err)
+	}
 	println(res)
 }

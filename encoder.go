@@ -1,9 +1,8 @@
 package signedqr
 
 import (
-	"crypto"
+	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
@@ -23,23 +22,23 @@ func Encode(data string, secretKeyPath string) *gozxing.BitMatrix {
 		return nil
 	}
 	block, _ := pem.Decode(keydata)
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	key, err := x509.ParseECPrivateKey(block.Bytes)
 	if err != nil {
 		print(err.Error())
 		return nil
 	}
 	message := []byte(data)
-	hashed := sha256.Sum256(message)
-	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, hashed[:])
-	signStr := fmt.Sprintf("%x", signature)
+	hashed := sha256.Sum224(message)
+	signature, err := ecdsa.SignASN1(rand.Reader, key, hashed[:])
+	signStr := fmt.Sprintf("%x", signature) // for debug
 	signBase64 := base64.StdEncoding.EncodeToString(signature)
 	fmt.Printf("hexstr: %d\n", len(signStr))
 	fmt.Printf("base64: %d\n", len(signBase64))
 
 	fmt.Printf("enc: hash: %x\n", hashed[:])
-	fmt.Printf("enc: sign: %x\n", signBase64)
-
-	signedData := data + signBase64
+	fmt.Printf("enc: sign: %x\n", signature)
+	nulChar := string([]byte{0})
+	signedData := data + nulChar + signBase64
 
 	// Generate QR Code
 	w := qrcode.NewQRCodeWriter()
