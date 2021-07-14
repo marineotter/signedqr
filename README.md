@@ -2,7 +2,7 @@
 
 ## About
 
-This library stores RSA-signed text in a QR code.
+This library converts text signed by a key into a QR code.
 
 It implements the storing part `Encode` and the decoding part `Decode`.
 
